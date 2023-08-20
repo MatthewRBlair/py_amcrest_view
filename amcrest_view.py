@@ -130,6 +130,7 @@ async def main(args):
 
 if __name__ == "__main__":
     parser = configargparse.ArgumentParser(description="Display IP camera video and highlight movement", default_config_files=["config"])
+    parser.add_argument("--config", dest="config", is_config_file=True, help="Config file path")
     parser.add_argument("-u", "--username", dest="username", required=True, type=str, help="Camera account username")
     parser.add_argument("-p", "--password", dest="password", required=True, type=str, help="Camera account password")
     parser.add_argument("-i", "--ip", dest="ip", required=True, type=str, help="Camera IP")

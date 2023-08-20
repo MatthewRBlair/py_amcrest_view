@@ -1,0 +1,14 @@
+# Rename to "config"
+
+discord_bot_token = TOKEN
+username = USERNAME
+password = PASSWORD
+ip = "127.0.0.1"
+port = ""
+channel = 1
+subtype = 1
+name = ""
+motion = False
+people = False
+discord_channel = CHANNEL
+discord_server = SERVER

@@ -23,7 +23,7 @@ async def on_ready():
 async def send_discord(server_id, channel_id, message, file=None):
     server = client.get_guild(server_id)
     channel = server.get_channel(channel_id)
-    await channel.send(f"Person detected on {args.name} at {dt.datetime.now()}!", file=file)
+    await channel.send(message, file=file)
 
 
 def to_thread(func: typing.Callable) -> typing.Coroutine:
@@ -79,7 +79,8 @@ async def main(args):
                 if detection_time - last_detection_time > dt.timedelta(seconds=2):
                     fname = f"{args.name}_detected_person.jpg"
                     cv2.imwrite(fname, frame)
-                    await send_discord(args.discord_server, args.discord_channel, "Person detected!", file=discord.File(fname))
+                    message = f"Person detected on {args.name} at {dt.datetime.now()}!"
+                    await send_discord(args.discord_server, args.discord_channel, message, file=discord.File(fname))
                     last_detection_time = detection_time
 
         if args.motion:

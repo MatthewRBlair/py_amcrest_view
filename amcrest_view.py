@@ -116,7 +116,8 @@ async def main(args):
             prev_frame = gray.copy()
 
         # Display the frame
-        cv2.imshow(args.name, frame)
+        if not args.headless:
+            cv2.imshow(args.name, frame)
         
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
@@ -140,6 +141,7 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--discord_bot_token", dest="discord_bot_token", required=False, type=str, help="SECRET token for discord bot")
     parser.add_argument("--discord_server", dest="discord_server", required=False, type=int, help="Discord server for discord bot")
     parser.add_argument("--discord_channel", dest="discord_channel", required=False, type=int, help="Discord channel for discord bot")
+    parser.add_argument("--headless", dest="headless", action="store_true", help="Run without displaying the video")
     args = parser.parse_args()
 
     client.run(args.discord_bot_token)

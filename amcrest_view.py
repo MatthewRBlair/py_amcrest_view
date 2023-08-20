@@ -60,6 +60,8 @@ async def main(args):
     hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
     last_detection_time = dt.datetime(1900, 1, 1)
+
+    counter = 0
     
     while True:
         success, frame = cap.read() # get frame from stream
@@ -122,6 +124,13 @@ async def main(args):
         
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
+
+        counter += 1
+        if counter > 1000: # reset window every couple minutes to not get behind
+            counter = 0
+            cap.release()
+            cv2.destroyAllWindows()
+            cap = cv2.VideoCapture(url)
             
     cap.release()
     cv2.destroyAllWindows()

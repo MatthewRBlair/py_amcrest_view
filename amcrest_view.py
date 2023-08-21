@@ -62,6 +62,8 @@ async def main(args):
     last_detection_time = dt.datetime(1900, 1, 1)
 
     counter = 0
+
+    last_rectangle = None
     
     while True:
         success, frame = cap.read() # get frame from stream
@@ -73,17 +75,19 @@ async def main(args):
         if args.people:
             boxes, weights = await block_hog(hog, frame) # call to opencv model for person detection, wrapped in async
 
-            for (x, y, w, h) in boxes:
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
+            if boxes != last_rectangle:
+                for (x, y, w, h) in boxes:
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
             
-            if len(boxes) > 0:
-                detection_time = dt.datetime.today()
-                if detection_time - last_detection_time > dt.timedelta(seconds=2):
-                    fname = f"{args.name}_detected_person.jpg"
-                    cv2.imwrite(fname, frame)
-                    message = f"Person detected on {args.name} at {dt.datetime.now()}!"
-                    await send_discord(args.discord_server, args.discord_channel, message, file=discord.File(fname))
-                    last_detection_time = detection_time
+                if len(boxes) > 0:
+                    detection_time = dt.datetime.today()
+                    if detection_time - last_detection_time > dt.timedelta(seconds=2):
+                        fname = f"{args.name}_detected_person.jpg"
+                        cv2.imwrite(fname, frame)
+                        message = f"Person detected on {args.name} at {dt.datetime.now()}!"
+                        await send_discord(args.discord_server, args.discord_channel, message, file=discord.File(fname))
+                        last_detection_time = detection_time
+            last_rectangle = boxes
 
         if args.motion:
             # Convert the frame to grayscale

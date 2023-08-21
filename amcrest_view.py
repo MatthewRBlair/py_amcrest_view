@@ -75,7 +75,7 @@ async def main(args):
         if args.people:
             boxes, weights = await block_hog(hog, frame) # call to opencv model for person detection, wrapped in async
 
-            if len(boxes) > 0 and boxes[0] = last_rectangle:
+            if len(boxes) > 0 and boxes[0] == last_rectangle:
                 for (x, y, w, h) in boxes:
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
             

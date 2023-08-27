@@ -7,30 +7,6 @@ import datetime as dt
 import functools
 import typing
 
-import psutil
-import os
-import time
-
-# Get the current process ID
-pid = os.getpid()
-
-# Get the number of available CPU cores
-num_cores = psutil.cpu_count()
-
-# Set the desired percentage of CPU usage (e.g., 50%)
-desired_percent = 50
-
-# Calculate the number of cores to use based on the desired percentage
-cores_to_use = max(1, int(num_cores * (desired_percent / 100)))
-
-# Get a list of available CPU cores
-available_cores = list(range(num_cores))
-
-# Select the first 'cores_to_use' cores for the process
-selected_cores = available_cores[:cores_to_use]
-
-# Set the CPU affinity for the process
-psutil.Process(pid).cpu_affinity(selected_cores)
 
 args = None
 

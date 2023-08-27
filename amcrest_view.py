@@ -39,6 +39,7 @@ def block_hog(hog, frame):
     return hog.detectMultiScale(frame, winStride=(8, 8), padding=(8, 8), scale=1.05)
 
 
+
 async def main(args):
     if args.port != "":
         url = "rtsp://{}:{}@{}:{}/cam/realmonitor?channel={}&subtype={}".format(args.username, args.password, args.ip, args.port, args.channel, args.subtype)
@@ -62,9 +63,6 @@ async def main(args):
 
     last_detection_time = dt.datetime(1900, 1, 1)
     last_reset_time = dt.datetime.today()
-
-    message = f"{args.name} logging on at {dt.datetime.now()}!"
-    await send_discord(args.discord_server, args.discord_channel, message)
     
     while True:
         success, frame = cap.read() # get frame from stream
@@ -84,7 +82,7 @@ async def main(args):
                 if detection_time - last_detection_time > dt.timedelta(seconds=2):
                     fname = f"{args.name}_detected_person.jpg"
                     cv2.imwrite(fname, frame)
-                    message = f"Person detected on {args.name} at {dt.datetime.now()}!"
+                    message = f"Person detected on {args.name} at {dt.datetime.now()} with {weights} confidence!"
                     await send_discord(args.discord_server, args.discord_channel, message, file=discord.File(fname))
                     last_detection_time = detection_time
 
@@ -132,9 +130,6 @@ async def main(args):
             cap.release()
             cv2.destroyAllWindows()
             cap = cv2.VideoCapture(url)
-       
-    message = f"{args.name} logging off at {dt.datetime.now()}!"
-    await send_discord(args.discord_server, args.discord_channel, message)
 
     cap.release()
     cv2.destroyAllWindows()

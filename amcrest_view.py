@@ -18,6 +18,7 @@ client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
+    await send_discord(args.discord_server, args.discord_channel, f"{args.name} logging on")
     await main(args)
 
 async def send_discord(server_id, channel_id, message, file=None):
@@ -63,7 +64,8 @@ async def main(args):
 
     counter = 0
 
-    last_rectangle = None
+    message = f"{args.name} logging on at {dt.datetime.now()}!"
+    await send_discord(args.discord_server, args.discord_channel, message)
     
     while True:
         success, frame = cap.read() # get frame from stream
@@ -75,19 +77,17 @@ async def main(args):
         if args.people:
             boxes, weights = await block_hog(hog, frame) # call to opencv model for person detection, wrapped in async
 
-            if len(boxes) > 0 and boxes[0] == last_rectangle:
-                for (x, y, w, h) in boxes:
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
+            for (x, y, w, h) in boxes:
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
             
-                if len(boxes) > 0:
-                    detection_time = dt.datetime.today()
-                    if detection_time - last_detection_time > dt.timedelta(seconds=2):
-                        fname = f"{args.name}_detected_person.jpg"
-                        cv2.imwrite(fname, frame)
-                        message = f"Person detected on {args.name} at {dt.datetime.now()}!"
-                        await send_discord(args.discord_server, args.discord_channel, message, file=discord.File(fname))
-                        last_detection_time = detection_time
-                last_rectangle = boxes[0]
+            if len(boxes) > 0:
+                detection_time = dt.datetime.today()
+                if detection_time - last_detection_time > dt.timedelta(seconds=2):
+                    fname = f"{args.name}_detected_person.jpg"
+                    cv2.imwrite(fname, frame)
+                    message = f"Person detected on {args.name} at {dt.datetime.now()}!"
+                    await send_discord(args.discord_server, args.discord_channel, message, file=discord.File(fname))
+                    last_detection_time = detection_time
 
         if args.motion:
             # Convert the frame to grayscale
@@ -135,9 +135,13 @@ async def main(args):
             cap.release()
             cv2.destroyAllWindows()
             cap = cv2.VideoCapture(url)
-            
+       
+    message = f"{args.name} logging off at {dt.datetime.now()}!"
+    await send_discord(args.discord_server, args.discord_channel, message)
+
     cap.release()
     cv2.destroyAllWindows()
+    await send_discord(args.discord_server, args.discord_channel, f"{args.name} logging off")
     await client.close()
     
 

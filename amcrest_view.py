@@ -61,8 +61,7 @@ async def main(args):
     hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
     last_detection_time = dt.datetime(1900, 1, 1)
-
-    counter = 0
+    last_reset_time = dt.datetime.today()
 
     message = f"{args.name} logging on at {dt.datetime.now()}!"
     await send_discord(args.discord_server, args.discord_channel, message)
@@ -129,9 +128,7 @@ async def main(args):
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
-        counter += 1
-        if counter > 1000: # reset window every couple minutes to not get behind
-            counter = 0
+        if dt.datetime.today() - last_reset_time > dt.timedelta(minutes=2): # reset window every couple minutes to not get behind
             cap.release()
             cv2.destroyAllWindows()
             cap = cv2.VideoCapture(url)

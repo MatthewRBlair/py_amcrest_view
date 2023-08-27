@@ -127,6 +127,7 @@ async def main(args):
             break
 
         if dt.datetime.today() - last_reset_time > dt.timedelta(minutes=2): # reset window every couple minutes to not get behind
+            last_reset_time = dt.datetime.today()
             cap.release()
             cv2.destroyAllWindows()
             cap = cv2.VideoCapture(url)

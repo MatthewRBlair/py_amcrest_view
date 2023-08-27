@@ -154,6 +154,7 @@ if __name__ == "__main__":
     parser.add_argument("--discord_server", dest="discord_server", required=False, type=int, help="Discord server for discord bot")
     parser.add_argument("--discord_channel", dest="discord_channel", required=False, type=int, help="Discord channel for discord bot")
     parser.add_argument("--headless", dest="headless", action="store_true", help="Run without displaying the video")
+    parser.add_argument("--confidence", dest="confidence", default=1.2, type=int, help="Confidence threshold for models")
     args = parser.parse_args()
 
     client.run(args.discord_bot_token)

@@ -74,7 +74,9 @@ async def main(args):
             print("Read Failed...")
             break # quit
         elif not success:
+            print("Read Failed...")
             failures += 1
+            continue
         
         failures = 0
 
@@ -92,7 +94,10 @@ async def main(args):
                     message = f"Person detected on {args.name} at {dt.datetime.now()} with {weights} confidence!"
                     await send_discord(args.discord_server, args.discord_channel, message, file=discord.File(fname))
                     last_detection_time = detection_time
-            elif dt.datetime.today() - last_detection_time > dt.timedelta(minutes=30) and dt.datetime.today() - last_checkin_time > dt.timedelta(minutes=30):
+            elif max(weights) > args.confidence:
+                print(f"{args.name} low confidence detection")
+
+            if dt.datetime.today() - last_detection_time > dt.timedelta(minutes=30) and dt.datetime.today() - last_checkin_time > dt.timedelta(minutes=30):
                 last_checkin_time = dt.datetime.today()
                 await send_discord(args.discord_server, args.discord_channel, f"{args.name} Checking in")
 

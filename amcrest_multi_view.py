@@ -1,5 +1,6 @@
 import cv2 # for streaming and image processing
 import discord # for discord bot integration
+import numpy as np
 
 import configargparse # for config file parsing
 import asyncio 
@@ -88,10 +89,12 @@ async def main(args):
             # Check if all frames have the same dimensions and type
             frame_shapes = [frame.shape for frame in frames]
             if all(shape == frame_shapes[0] for shape in frame_shapes) and all(frame.dtype == frames[0].dtype for frame in frames):
-                # Arrange frames in a 2x2 grid
-                top_row = cv2.hconcat([frames[0], frames[1]])
-                bottom_row = cv2.hconcat([frames[2], frames[3]])
-                stitched_frame = cv2.vconcat([top_row, bottom_row])
+                # Arrange frames in a grid
+                grid = []
+                for i in range(0, len(caps), 2):
+                    row = cv2.hconcat([frames[i], frames[i + 1] if i + 1 < len(caps) else np.zeros_like(frames[i])])
+                    grid.append(row)
+                stitched_frame = cv2.vconcat(grid)
             else:
                 print("Frames have different dimensions or types.")
 
@@ -157,7 +160,7 @@ async def main(args):
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
-        if dt.datetime.today() - last_reset_time > dt.timedelta(minutes=2): # reset window every couple minutes to not get behind
+        if dt.datetime.today() - last_reset_time > dt.timedelta(minutes=10): # reset window every couple minutes to not get behind
             last_reset_time = dt.datetime.today()
             [cap.release() for cap in caps]
             cv2.destroyAllWindows()

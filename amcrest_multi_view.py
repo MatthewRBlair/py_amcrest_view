@@ -65,11 +65,16 @@ async def main(args):
     last_detection_time = dt.datetime(1900, 1, 1)
     last_reset_time = dt.datetime.today()
     last_checkin_time = dt.datetime.today()
-    
+
+    retries = 5
+
     while True:
         frames = []
         for cap in caps:
             success, frame = cap.read() # get frame from stream
+            i = 1
+            while not success and i < retries:
+                success, frame = cap.read()
         
             if not success:
                 print("Read Failed...")

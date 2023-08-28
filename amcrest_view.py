@@ -86,7 +86,7 @@ async def main(args):
                     message = f"Person detected on {args.name} at {dt.datetime.now()} with {weights} confidence!"
                     await send_discord(args.discord_server, args.discord_channel, message, file=discord.File(fname))
                     last_detection_time = detection_time
-            elif dt.datetime.today() - last_detection_time > dt.timedelta(minutes=1) and dt.datetime.today() - last_checkin_time > dt.timedelta(minutes=1):
+            elif dt.datetime.today() - last_detection_time > dt.timedelta(minutes=30) and dt.datetime.today() - last_checkin_time > dt.timedelta(minutes=30):
                 last_checkin_time = dt.datetime.today()
                 await send_discord(args.discord_server, args.discord_channel, f"{args.name} Checking in")
 

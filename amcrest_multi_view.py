@@ -73,7 +73,7 @@ async def main(args):
         
             if not success:
                 print("Read Failed...")
-                break # quit
+                return # quit
 
             frames.append(frame)
 

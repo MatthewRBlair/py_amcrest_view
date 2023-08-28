@@ -74,6 +74,7 @@ async def main(args):
             success, frame = cap.read() # get frame from stream
             i = 1
             while not success and i < retries:
+                print("Read Failed, Retrying...")
                 success, frame = cap.read()
         
             if not success:
@@ -157,7 +158,7 @@ async def main(args):
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
-        if dt.datetime.today() - last_reset_time > dt.timedelta(minutes=10): # reset window every couple minutes to not get behind
+        if dt.datetime.today() - last_reset_time > dt.timedelta(minutes=2): # reset window every couple minutes to not get behind
             last_reset_time = dt.datetime.today()
             [cap.release() for cap in caps]
             cv2.destroyAllWindows()

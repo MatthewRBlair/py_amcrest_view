@@ -67,9 +67,9 @@ async def main(args):
     last_checkin_time = dt.datetime.today()
 
     failures = 0
-    
+    frames = [0 for cap in caps]
     while True:
-        frames = []
+        i = 0
         for cap in caps:
             success, frame = cap.read() # get frame from stream
         
@@ -79,11 +79,11 @@ async def main(args):
             elif not success:
                 print("Read Failed...")
                 failures += 1
-                continue
+            else:
+                failures = 0
 
-            frames.append(frame)
-        
-        failures = 0
+            frames[i]
+            i += 1
 
         if len(frames) == len(caps):
             # Check if all frames have the same dimensions and type

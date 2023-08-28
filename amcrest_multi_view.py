@@ -6,6 +6,7 @@ import asyncio
 import datetime as dt
 import functools
 import typing
+import json
 
 
 args = None
@@ -16,9 +17,11 @@ intents.message_content = True
 intents.typing = False
 client = discord.Client(intents=intents)
 
+camera_configs = dict()
+
 @client.event
 async def on_ready():
-    await send_discord(args.discord_server, args.discord_channel, f"{args.name} logging on")
+    await send_discord(args.discord_server, args.discord_channel, f"Logging on")
     await main(args)
 
 async def send_discord(server_id, channel_id, message, file=None):
@@ -41,18 +44,15 @@ def block_hog(hog, frame):
 
 
 async def main(args):
-    if args.port != "":
-        url = "rtsp://{}:{}@{}:{}/cam/realmonitor?channel={}&subtype={}".format(args.username, args.password, args.ip, args.port, args.channel, args.subtype)
-    else:
-        url = "rtsp://{}:{}@{}/cam/realmonitor?channel={}&subtype={}".format(args.username, args.password, args.ip, args.channel, args.subtype)
-        
+    urls = [f"rtsp://{camera_configs[cam]['username']}:{camera_configs[cam]['password']}@{camera_configs[cam]['ip']}{camera_configs[cam]['port']}/cam/realmonitor?channel={camera_configs[cam]['channel']}&subtype={camera_configs[cam]['subtype']}" for cam in camera_configs]
+    
     # motion detection thresholds
     min_threshold = 30
     max_threshold = 150
     
-    cap = cv2.VideoCapture(url)
+    caps = [cv2.VideoCapture(url) for url in urls]
     
-    success, frame = cap.read()
+    success, frame = caps[0].read()
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     
     prev_frame = None
@@ -68,43 +68,58 @@ async def main(args):
     failures = 0
     
     while True:
-        success, frame = cap.read() # get frame from stream
+        frames = []
+        for cap in caps:
+            success, frame = cap.read() # get frame from stream
         
-        if not success and failures > 3:
-            print("Read Failed...")
-            break # quit
-        elif not success:
-            print("Read Failed...")
-            failures += 1
-            continue
+            if not success and failures > 3 * len(caps):
+                print("Read Failed...")
+                break # quit
+            elif not success:
+                print("Read Failed...")
+                failures += 1
+                continue
+
+            frames.append(frame)
         
         failures = 0
 
+        if len(frames) == len(caps):
+            # Check if all frames have the same dimensions and type
+            frame_shapes = [frame.shape for frame in frames]
+            if all(shape == frame_shapes[0] for shape in frame_shapes) and all(frame.dtype == frames[0].dtype for frame in frames):
+                # Arrange frames in a 2x2 grid
+                top_row = cv2.hconcat([frames[0], frames[1]])
+                bottom_row = cv2.hconcat([frames[2], frames[3]])
+                stitched_frame = cv2.vconcat([top_row, bottom_row])
+            else:
+                print("Frames have different dimensions or types.")
+
         if args.people:
-            boxes, weights = await block_hog(hog, frame) # call to opencv model for person detection, wrapped in async
+            boxes, weights = await block_hog(hog, stitched_frame) # call to opencv model for person detection, wrapped in async
 
             for (x, y, w, h) in boxes:
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
+                cv2.rectangle(stitched_frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
             
             if len(boxes) > 0 and max(weights) > args.confidence:
                 detection_time = dt.datetime.today()
                 if detection_time - last_detection_time > dt.timedelta(seconds=2):
-                    print(f"{args.name} high confidence detection")
-                    fname = f"{args.name}_detected_person.jpg"
-                    cv2.imwrite(fname, frame)
-                    message = f"Person detected on {args.name} at {dt.datetime.now()} with {weights} confidence!"
+                    print(f" high confidence detection")
+                    fname = f"_detected_person.jpg"
+                    cv2.imwrite(fname, stitched_frame)
+                    message = f"Person detected on  at {dt.datetime.now()} with {weights} confidence!"
                     await send_discord(args.discord_server, args.discord_channel, message, file=discord.File(fname))
                     last_detection_time = detection_time
             elif len(boxes) > 0 and max(weights) <= args.confidence:
-                print(f"{args.name} low confidence detection")
+                print(f"Low confidence detection")
 
             if dt.datetime.today() - last_detection_time > dt.timedelta(minutes=30) and dt.datetime.today() - last_checkin_time > dt.timedelta(minutes=30):
                 last_checkin_time = dt.datetime.today()
-                await send_discord(args.discord_server, args.discord_channel, f"{args.name} Checking in")
+                await send_discord(args.discord_server, args.discord_channel, f" Checking in")
 
         if args.motion:
             # Convert the frame to grayscale
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            gray = cv2.cvtColor(stitched_frame, cv2.COLOR_BGR2GRAY)
 
             # Initialize prev_frame with the first frame
             if prev_frame is None:
@@ -130,47 +145,44 @@ async def main(args):
                 motion_detected = True
 
                 x, y, w, h = cv2.boundingRect(contour)
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangle
+                cv2.rectangle(stitched_frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangle
 
             # Update prev_frame
             prev_frame = gray.copy()
 
         # Display the frame
         if not args.headless:
-            cv2.imshow(args.name, frame)
+            cv2.imshow("Cameras", stitched_frame)
         
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
         if dt.datetime.today() - last_reset_time > dt.timedelta(minutes=2): # reset window every couple minutes to not get behind
             last_reset_time = dt.datetime.today()
-            cap.release()
+            [cap.release() for cap in caps]
             cv2.destroyAllWindows()
-            cap = cv2.VideoCapture(url)
+            caps = [cv2.VideoCapture(url) for url in urls]
 
     cap.release()
     cv2.destroyAllWindows()
-    await send_discord(args.discord_server, args.discord_channel, f"{args.name} logging off")
+    await send_discord(args.discord_server, args.discord_channel, f"Logging off")
     await client.close()
     
 
 if __name__ == "__main__":
     parser = configargparse.ArgumentParser(description="Display IP camera video and highlight movement", default_config_files=["config"])
     parser.add_argument("--config", dest="config", is_config_file=True, help="Config file path")
-    parser.add_argument("-u", "--username", dest="username", required=True, type=str, help="Camera account username")
-    parser.add_argument("-p", "--password", dest="password", required=True, type=str, help="Camera account password")
-    parser.add_argument("-i", "--ip", dest="ip", required=True, type=str, help="Camera IP")
-    parser.add_argument("-o", "--port", dest="port", default="", type=str, help="Camera RTSP port")
-    parser.add_argument("-c", "--channel", dest="channel", default=1, type=int, help="Amcrest camera channel")
-    parser.add_argument("-s", "--subtype", dest="subtype", default=1, type=int, help="Amcrest camera stream subtype")
-    parser.add_argument("-n", "--name", dest="name", default="Movement", type=str, help="Name to display")
-    parser.add_argument("-m", "--motion", dest="motion", action="store_true", help="Display a red box around moving objects")
-    parser.add_argument("-e", "--people", dest="people", action="store_true", help="Display a red box around people")
-    parser.add_argument("-b", "--discord_bot_token", dest="discord_bot_token", required=False, type=str, help="SECRET token for discord bot")
     parser.add_argument("--discord_server", dest="discord_server", required=False, type=int, help="Discord server for discord bot")
     parser.add_argument("--discord_channel", dest="discord_channel", required=False, type=int, help="Discord channel for discord bot")
     parser.add_argument("--headless", dest="headless", action="store_true", help="Run without displaying the video")
     parser.add_argument("--confidence", dest="confidence", default=1.2, type=float, help="Confidence threshold for models")
+    parser.add_argument("--cameras", dest="cameras", type=str, help="Config json file for all cameras")
+    parser.add_argument("--discord_bot_token", dest="discord_bot_token", required=False, type=str, help="SECRET token for discord bot")
+    parser.add_argument("--motion", dest="motion", action="store_true", help="Display a red box around moving objects")
+    parser.add_argument("--people", dest="people", action="store_true", help="Display a red box around people")
     args = parser.parse_args()
+
+    with open(args.cameras) as f:
+        camera_configs = json.load(f)
 
     client.run(args.discord_bot_token)

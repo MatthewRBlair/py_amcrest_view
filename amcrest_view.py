@@ -77,7 +77,7 @@ async def main(args):
             for (x, y, w, h) in boxes:
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
             
-            if len(boxes) > 0 and max(weights) > 1:
+            if len(boxes) > 0 and max(weights) > args.confidence:
                 detection_time = dt.datetime.today()
                 if detection_time - last_detection_time > dt.timedelta(seconds=2):
                     fname = f"{args.name}_detected_person.jpg"

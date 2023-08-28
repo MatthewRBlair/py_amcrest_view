@@ -64,13 +64,19 @@ async def main(args):
     last_detection_time = dt.datetime(1900, 1, 1)
     last_reset_time = dt.datetime.today()
     last_checkin_time = dt.datetime.today()
+
+    failures = 0
     
     while True:
         success, frame = cap.read() # get frame from stream
         
-        if not success:
+        if not success and failures > 3:
             print("Read Failed...")
             break # quit
+        elif not success:
+            failures += 1
+        
+        failures = 0
 
         if args.people:
             boxes, weights = await block_hog(hog, frame) # call to opencv model for person detection, wrapped in async

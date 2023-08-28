@@ -5,3 +5,6 @@
 /*config
 /.vs/*
 /*.jpg
+*.avi
+/*test.py
+*.json

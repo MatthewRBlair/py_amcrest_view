@@ -158,7 +158,7 @@ async def main(args):
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
-        if dt.datetime.today() - last_reset_time > dt.timedelta(minutes=2): # reset window every couple minutes to not get behind
+        if dt.datetime.today() - last_reset_time > dt.timedelta(minutes=args.reset): # reset window every couple minutes to not get behind
             last_reset_time = dt.datetime.today()
             [cap.release() for cap in caps]
             cv2.destroyAllWindows()
@@ -181,6 +181,7 @@ if __name__ == "__main__":
     parser.add_argument("--discord_bot_token", dest="discord_bot_token", required=False, type=str, help="SECRET token for discord bot")
     parser.add_argument("--motion", dest="motion", action="store_true", help="Display a red box around moving objects")
     parser.add_argument("--people", dest="people", action="store_true", help="Display a red box around people")
+    parser.add_argument("--reset", dest="reset", default=2, type=int, help="Reset time in minutes")
     args = parser.parse_args()
 
     with open(args.cameras) as f:

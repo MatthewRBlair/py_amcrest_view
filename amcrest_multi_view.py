@@ -108,7 +108,7 @@ async def main(args):
                     i = 0
                     for (x, y, w, h) in boxes:
                         if [x, y, w, h] in permanent_rectangles:
-                            weights.pop(str([x, y, w, h]))
+                            weights.remove([x, y, w, h])
                             continue
                         cv2.rectangle(stitched_frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
                         if str([x, y, w, h]) not in rectangle_history:
@@ -120,7 +120,7 @@ async def main(args):
                         i += 1
 
                     if len(boxes) > 0 and max(weights) > args.confidence:
-                        #print(f"High {max(weights)} confidence detection")
+                        print(f"High {max(weights)} confidence detection")
                         fname = f"_detected_person.jpg"
                         cv2.imwrite(fname, stitched_frame)
                         message = f"Person detected on  at {dt.datetime.now()} with {weights} confidence!"

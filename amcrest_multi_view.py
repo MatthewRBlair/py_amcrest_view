@@ -68,6 +68,9 @@ async def main(args):
 
     retries = 5
 
+    rectangle_history = dict()
+    permanent_rectangles = []
+
     while True:
         frames = []
         for cap in caps:
@@ -98,21 +101,33 @@ async def main(args):
 
         if args.people:
             boxes, weights = await block_hog(hog, stitched_frame) # call to opencv model for person detection, wrapped in async
-
-            for (x, y, w, h) in boxes:
-                cv2.rectangle(stitched_frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
             
             if len(boxes) > 0 and max(weights) > args.confidence:
                 detection_time = dt.datetime.today()
                 if detection_time - last_detection_time > dt.timedelta(seconds=2):
-                    print(f" high confidence detection")
-                    fname = f"_detected_person.jpg"
-                    cv2.imwrite(fname, stitched_frame)
-                    message = f"Person detected on  at {dt.datetime.now()} with {weights} confidence!"
-                    await send_discord(args.discord_server, args.discord_channel, message, file=discord.File(fname))
-                    last_detection_time = detection_time
-            elif len(boxes) > 0 and max(weights) <= args.confidence:
-                print(f"Low confidence detection")
+                    i = 0
+                    for (x, y, w, h) in boxes:
+                        if [x, y, w, h] in permanent_rectangles:
+                            weights.pop(str([x, y, w, h]))
+                            continue
+                        cv2.rectangle(stitched_frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
+                        if str([x, y, w, h]) not in rectangle_history:
+                            rectangle_history[str([x, y, w, h])] = 0
+                        rectangle_history[str([x, y, w, h])] += 1
+                        if rectangle_history[str([x, y, w, h])] > 10 and [x, y, w, h] not in permanent_rectangles:
+                            print(f"Adding {x, y, w, h} to the list of bad items")
+                            permanent_rectangles.append([x, y, w, h])
+                        i += 1
+
+                    if len(boxes) > 0 and max(weights) > args.confidence:
+                        #print(f"High {max(weights)} confidence detection")
+                        fname = f"_detected_person.jpg"
+                        cv2.imwrite(fname, stitched_frame)
+                        message = f"Person detected on  at {dt.datetime.now()} with {weights} confidence!"
+                        await send_discord(args.discord_server, args.discord_channel, message, file=discord.File(fname))
+                        last_detection_time = detection_time
+            #elif len(boxes) > 0 and max(weights) <= args.confidence:
+                #print(f"Low {max(weights)} confidence detection")
 
             if dt.datetime.today() - last_detection_time > dt.timedelta(minutes=30) and dt.datetime.today() - last_checkin_time > dt.timedelta(minutes=30):
                 last_checkin_time = dt.datetime.today()

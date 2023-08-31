@@ -108,7 +108,7 @@ async def main(args):
                     i = 0
                     for (x, y, w, h) in boxes:
                         if [x, y, w, h] in permanent_rectangles:
-                            weights.remove([x, y, w, h])
+                            np.delete(weights, [x, y, w, h])
                             continue
                         cv2.rectangle(stitched_frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
                         if str([x, y, w, h]) not in rectangle_history:

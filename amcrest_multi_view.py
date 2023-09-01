@@ -77,6 +77,7 @@ async def main(args):
             success, frame = cap.read() # get frame from stream
             i = 1
             while not success and i < retries:
+                i += 1
                 print("Read Failed, Retrying...")
                 success, frame = cap.read()
         

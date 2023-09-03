@@ -20,6 +20,9 @@ client = discord.Client(intents=intents)
 
 camera_configs = dict()
 
+fp_threshold = 5
+
+
 @client.event
 async def on_ready():
     await send_discord(args.discord_server, args.discord_channel, f"Logging on")
@@ -118,7 +121,7 @@ async def main(args):
                         if str([x, y, w, h]) not in rectangle_history:
                             rectangle_history[str([x, y, w, h])] = 0
                         rectangle_history[str([x, y, w, h])] += 1
-                        if rectangle_history[str([x, y, w, h])] > 10 and [x, y, w, h] not in permanent_rectangles:
+                        if rectangle_history[str([x, y, w, h])] > fp_threshold and [x, y, w, h] not in permanent_rectangles:
                             print(f"Adding {x, y, w, h} to the list of false positives")
                             permanent_rectangles.append([x, y, w, h])
                         i += 1

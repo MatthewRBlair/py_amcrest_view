@@ -124,7 +124,7 @@ async def main(args):
                         i += 1
 
                     if drew_box and len(boxes) > 0 and max(weights) > args.confidence:
-                        print(f"High {max(weights)} confidence detection")
+                        print(f"High {max(weights)} confidence detection at {boxes}")
                         fname = f"_detected_person.jpg"
                         cv2.imwrite(fname, stitched_frame)
                         message = f"Person detected on  at {dt.datetime.now()} with {weights} confidence!"

@@ -107,20 +107,23 @@ async def main(args):
                 detection_time = dt.datetime.today()
                 if detection_time - last_detection_time > dt.timedelta(seconds=2):
                     i = 0
+                    drew_box = False
                     for (x, y, w, h) in boxes:
                         if [x, y, w, h] in permanent_rectangles:
+                            print(f"Skipping {x, y, w, h}")
                             np.delete(weights, i, axis=0)
                             continue
                         cv2.rectangle(stitched_frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
+                        drew_box = True
                         if str([x, y, w, h]) not in rectangle_history:
                             rectangle_history[str([x, y, w, h])] = 0
                         rectangle_history[str([x, y, w, h])] += 1
                         if rectangle_history[str([x, y, w, h])] > 10 and [x, y, w, h] not in permanent_rectangles:
-                            print(f"Adding {x, y, w, h} to the list of bad items")
+                            print(f"Adding {x, y, w, h} to the list of false positives")
                             permanent_rectangles.append([x, y, w, h])
                         i += 1
 
-                    if len(boxes) > 0 and max(weights) > args.confidence:
+                    if drew_box and len(boxes) > 0 and max(weights) > args.confidence:
                         print(f"High {max(weights)} confidence detection")
                         fname = f"_detected_person.jpg"
                         cv2.imwrite(fname, stitched_frame)

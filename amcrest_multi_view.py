@@ -56,9 +56,6 @@ async def main(args):
     
     caps = [cv2.VideoCapture(url) for url in urls]
     
-    success, frame = caps[0].read()
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    
     prev_frame = None
     motion_detected = False
 
@@ -113,7 +110,6 @@ async def main(args):
                     drew_box = False
                     for (x, y, w, h) in boxes:
                         if [x, y, w, h] in permanent_rectangles:
-                            print(f"Skipping {x, y, w, h}")
                             np.delete(weights, i, axis=0)
                             continue
                         cv2.rectangle(stitched_frame, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Draw red rectangles
@@ -133,8 +129,6 @@ async def main(args):
                         message = f"Person detected on  at {dt.datetime.now()} with {weights} confidence!"
                         await send_discord(args.discord_server, args.discord_channel, message, file=discord.File(fname))
                         last_detection_time = detection_time
-            #elif len(boxes) > 0 and max(weights) <= args.confidence:
-                #print(f"Low {max(weights)} confidence detection")
 
             if dt.datetime.today() - last_detection_time > dt.timedelta(minutes=30) and dt.datetime.today() - last_checkin_time > dt.timedelta(minutes=30):
                 last_checkin_time = dt.datetime.today()

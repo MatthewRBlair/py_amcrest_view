@@ -88,6 +88,9 @@ async def main(args):
                         print(f"\t{reboot_url}\n{j}\n{auths[j]}")
                         try:
                             requests.get(reboot_url, auth=auths[j])
+                            [cap.release() for cap in caps]
+                            cv2.destroyAllWindows()
+                            caps = [cv2.VideoCapture(url) for url in urls]
                         except Exception as e:
                             print(e)
                             pass

@@ -52,7 +52,7 @@ def block_hog(hog, frame):
 
 async def main(args):
     urls = [f"rtsp://{camera_configs[cam]['username']}:{camera_configs[cam]['password']}@{camera_configs[cam]['ip']}{camera_configs[cam]['port']}/cam/realmonitor?channel={camera_configs[cam]['channel']}&subtype={camera_configs[cam]['subtype']}" for cam in camera_configs]
-    reboot_url = f"http://{camera_configs[cam]['ip']}/cgi-bin/magicBox.cgi?action=reboot"
+    reboot_urls = [f"http://{camera_configs[cam]['ip']}/cgi-bin/magicBox.cgi?action=reboot" for cam in camera_configs]
     auth = HTTPDigestAuth(camera_configs[cam]['username'], camera_configs[cam]['password'])
 
     # motion detection thresholds
@@ -83,7 +83,8 @@ async def main(args):
                 i += 1
                 if i % 100 == 0:
                     print("Rebooting...")
-                    requests.get(reboot_url, auth=auth)
+                    for reboot_url in reboot_urls:
+                        requests.get(reboot_url, auth=auth)
                     time.sleep(30)
                 print("Read Failed, Retrying...")
                 success, frame = cap.read()

@@ -8,6 +8,9 @@ import datetime as dt
 import functools
 import typing
 import json
+import requests
+from requests.auth import HTTPDigestAuth
+import time
 
 
 args = None
@@ -49,7 +52,9 @@ def block_hog(hog, frame):
 
 async def main(args):
     urls = [f"rtsp://{camera_configs[cam]['username']}:{camera_configs[cam]['password']}@{camera_configs[cam]['ip']}{camera_configs[cam]['port']}/cam/realmonitor?channel={camera_configs[cam]['channel']}&subtype={camera_configs[cam]['subtype']}" for cam in camera_configs]
-    
+    reboot_url = f"http://{camera_configs[cam]['ip']}/cgi-bin/magicBox.cgi?action=reboot"
+    auth = HTTPDigestAuth(camera_configs[cam]['username'], camera_configs[cam]['password'])
+
     # motion detection thresholds
     min_threshold = 30
     max_threshold = 150
@@ -66,8 +71,6 @@ async def main(args):
     last_reset_time = dt.datetime.today()
     last_checkin_time = dt.datetime.today()
 
-    retries = 5
-
     rectangle_history = dict()
     permanent_rectangles = []
 
@@ -76,8 +79,12 @@ async def main(args):
         for cap in caps:
             success, frame = cap.read() # get frame from stream
             i = 1
-            while not success and i < retries:
+            while not success:
                 i += 1
+                if i % 100 == 0:
+                    print("Rebooting...")
+                    requests.get(reboot_url, auth=auth)
+                    time.sleep(30)
                 print("Read Failed, Retrying...")
                 success, frame = cap.read()
         

@@ -85,6 +85,7 @@ async def main(args):
                     print("Rebooting...")
                     j = 0
                     for reboot_url in reboot_urls:
+                        print(f"\t{reboot_url}\n{j}\n{auths[j]}")
                         requests.get(reboot_url, auth=auths[j])
                         j += 1
                     time.sleep(30)

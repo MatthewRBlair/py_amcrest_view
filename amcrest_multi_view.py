@@ -88,7 +88,8 @@ async def main(args):
                     async with aiohttp.ClientSession() as session:
                         for reboot_url in reboot_urls:
                             try:
-                                async with session.get(reboot_url, auth=auths[j]) as resp:
+                                session.auth = (auths[j].username, auths[j].password)
+                                async with session.get(reboot_url) as resp:
                                     r = await resp.json()
                                     print(r)
                             except Exception as e:

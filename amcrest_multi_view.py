@@ -2,7 +2,7 @@ import cv2 # for streaming and image processing
 import discord # for discord bot integration
 import numpy as np
 import aiohttp
-import httpx
+from aiohttp import HTTPDigestAuth
 
 import configargparse # for config file parsing
 import asyncio 
@@ -13,6 +13,7 @@ import json
 import requests
 from requests.auth import HTTPDigestAuth
 import time
+import hashlib
 
 
 args = None
@@ -51,6 +52,12 @@ def block_hog(hog, frame):
     return hog.detectMultiScale(frame, winStride=(8, 8), padding=(8, 8), scale=1.05)
 
 
+async def calculate_digest_response(username, password, realm, nonce, uri, method):
+    ha1 = hashlib.md5(f"{username}:{realm}:{password}".encode('utf-8')).hexdigest()
+    ha2 = hashlib.md5(f"{method}:{uri}".encode('utf-8')).hexdigest()
+    response = hashlib.md5(f"{ha1}:{nonce}:{ha2}".encode('utf-8')).hexdigest()
+    return response
+
 
 async def main(args):
     urls = [f"rtsp://{camera_configs[cam]['username']}:{camera_configs[cam]['password']}@{camera_configs[cam]['ip']}{camera_configs[cam]['port']}/cam/realmonitor?channel={camera_configs[cam]['channel']}&subtype={camera_configs[cam]['subtype']}" for cam in camera_configs]
@@ -86,11 +93,27 @@ async def main(args):
                 if i % 100 == 0:
                     print("Rebooting...")
                     j = 0
-                    #async with aiohttp.ClientSession() as session:
-                    async with httpx.AsyncClient() as client:
+                    async with aiohttp.ClientSession() as session:
                         for reboot_url in reboot_urls:
                             try:
-                                await client.get(reboot_url, auth=(auths[j].username, auths[j].password), auth_type=httpx.AuthTypes.DIGEST)
+                                response = await session.get(reboot_url)
+                                www_authenticate = response.headers.get('WWW-Authenticate')
+                                if www_authenticate and www_authenticate.startswith('Digest '):
+                                    auth_info = www_authenticate[len('Digest '):]
+                                    auth_dict = dict(part.split('=', 1) for part in auth_info.split(', '))
+                                    realm = auth_dict.get('realm').strip('"')
+                                    nonce = auth_dict.get('nonce').strip('"')
+
+                                    digest_response = await calculate_digest_response(
+                                        auths[j].username, auths[j].password, realm, nonce, reboot_url, 'GET'
+                                    )
+
+                                    headers = {
+                                        'Authorization': f'Digest username="{auths[j].username}", realm="{realm}", nonce="{nonce}", uri="{url}", response="{digest_response}"'
+                                    }
+                                    async with session.get(reboot_url, headers=headers) as resp:
+                                        r = await resp.json()
+                                        print(r)
                             except Exception as e:
                                 print(e)
                                 pass

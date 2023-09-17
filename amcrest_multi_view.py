@@ -2,7 +2,6 @@ import cv2 # for streaming and image processing
 import discord # for discord bot integration
 import numpy as np
 import aiohttp
-from aiohttp import HTTPDigestAuth
 
 import configargparse # for config file parsing
 import asyncio 

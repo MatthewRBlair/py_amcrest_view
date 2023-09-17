@@ -1,6 +1,7 @@
 import cv2 # for streaming and image processing
 import discord # for discord bot integration
 import numpy as np
+import aiohttp
 
 import configargparse # for config file parsing
 import asyncio 
@@ -84,13 +85,16 @@ async def main(args):
                 if i % 100 == 0:
                     print("Rebooting...")
                     j = 0
-                    for reboot_url in reboot_urls:
-                        try:
-                            requests.get(reboot_url, auth=auths[j])
-                        except Exception as e:
-                            print(e)
-                            pass
-                        j += 1
+                    async with aiohttp.ClientSession() as session:
+                        for reboot_url in reboot_urls:
+                            try:
+                                async with session.get(reboot_url, auth=auths[j]) as resp:
+                                    r = await resp.json()
+                                    print(r)
+                            except Exception as e:
+                                print(e)
+                                pass
+                            j += 1
                     await asyncio.sleep(60)
                     [cap.release() for cap in caps]
                     cv2.destroyAllWindows()

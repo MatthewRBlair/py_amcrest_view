@@ -2,7 +2,7 @@ import cv2 # for streaming and image processing
 import discord # for discord bot integration
 import numpy as np
 import aiohttp
-from aiohttp import HTTPDigestAuth
+import httpx
 
 import configargparse # for config file parsing
 import asyncio 
@@ -11,7 +11,7 @@ import functools
 import typing
 import json
 import requests
-#from requests.auth import HTTPDigestAuth
+from requests.auth import HTTPDigestAuth
 import time
 
 
@@ -86,13 +86,11 @@ async def main(args):
                 if i % 100 == 0:
                     print("Rebooting...")
                     j = 0
-                    async with aiohttp.ClientSession() as session:
+                    #async with aiohttp.ClientSession() as session:
+                    async with httpx.AsyncClient() as client:
                         for reboot_url in reboot_urls:
                             try:
-                                session.auth = (auths[j].username, auths[j].password)
-                                async with session.get(reboot_url, auth=auths[j]) as resp:
-                                    r = await resp.json()
-                                    print(r)
+                                await client.get(reboot_url, auth=(auths[j].username, auths[j].password), auth_type=httpx.AuthTypes.DIGEST)
                             except Exception as e:
                                 print(e)
                                 pass

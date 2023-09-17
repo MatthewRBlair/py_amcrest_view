@@ -85,14 +85,13 @@ async def main(args):
                     print("Rebooting...")
                     j = 0
                     for reboot_url in reboot_urls:
-                        print(f"\t{reboot_url}\n{j}\n{auths[j].username}\t{auths[j].password}")
                         try:
                             requests.get(reboot_url, auth=auths[j])
                         except Exception as e:
                             print(e)
                             pass
                         j += 1
-                    time.sleep(60)
+                    await asyncio.sleep(60)
                     [cap.release() for cap in caps]
                     cv2.destroyAllWindows()
                     caps = [cv2.VideoCapture(url) for url in urls]

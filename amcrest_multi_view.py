@@ -64,7 +64,7 @@ async def calculate_digest_response(username, password, realm, nonce, uri, metho
 
 async def main(args):
     urls = [f"rtsp://{camera_configs[cam]['username']}:{camera_configs[cam]['password']}@{camera_configs[cam]['ip']}{camera_configs[cam]['port']}/cam/realmonitor?channel={camera_configs[cam]['channel']}&subtype={camera_configs[cam]['subtype']}" for cam in camera_configs]
-    reboot_urls = [f"http://{camera_configs[cam]['ip']}/cgi-bin/magicBox.cgi?action=reboot" for cam in camera_configs]
+    reboot_urls = [f"http://{camera_configs[cam]['ip']}{camera_configs[cam]['port']}/cgi-bin/magicBox.cgi?action=reboot" for cam in camera_configs]
     auths = [HTTPDigestAuth(camera_configs[cam]['username'], camera_configs[cam]['password']) for cam in camera_configs]
 
     # motion detection thresholds

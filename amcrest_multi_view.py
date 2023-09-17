@@ -110,7 +110,7 @@ async def main(args):
                                     'Authorization': f'Digest username="{auths[j].username}", realm="{realm}", nonce="{nonce}", uri="{reboot_url}", response="{digest_response}"'
                                 }
                                 async with session.get(reboot_url, headers=headers) as resp:
-                                    await resp.json()
+                                    await resp
                             j += 1
                     await asyncio.sleep(60)
                     [cap.release() for cap in caps]

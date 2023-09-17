@@ -50,6 +50,10 @@ def to_thread(func: typing.Callable) -> typing.Coroutine:
 def block_hog(hog, frame):
     return hog.detectMultiScale(frame, winStride=(8, 8), padding=(8, 8), scale=1.05)
 
+@to_thread
+def get_somthing(url, auth=None):
+    return requests.get(url, auth=auth)
+
 
 async def calculate_digest_response(username, password, realm, nonce, uri, method):
     ha1 = hashlib.md5(f"{username}:{realm}:{password}".encode('utf-8')).hexdigest()
@@ -92,26 +96,9 @@ async def main(args):
                 if i % 100 == 0:
                     print("Rebooting...")
                     j = 0
-                    async with aiohttp.ClientSession() as session:
-                        for reboot_url in reboot_urls:
-                            response = await session.get(reboot_url)
-                            www_authenticate = response.headers.get('WWW-Authenticate')
-                            if www_authenticate and www_authenticate.startswith('Digest '):
-                                auth_info = www_authenticate[len('Digest '):]
-                                auth_dict = dict(part.split('=', 1) for part in auth_info.split(', '))
-                                realm = auth_dict.get('realm').strip('"')
-                                nonce = auth_dict.get('nonce').strip('"')
-
-                                digest_response = await calculate_digest_response(
-                                    auths[j].username, auths[j].password, realm, nonce, reboot_url, 'GET'
-                                )
-
-                                headers = {
-                                    'Authorization': f'Digest username="{auths[j].username}", realm="{realm}", nonce="{nonce}", uri="{reboot_url}", response="{digest_response}"'
-                                }
-                                async with session.get(reboot_url, headers=headers) as resp:
-                                    print(resp)
-                            j += 1
+                    for reboot_url in reboot_urls:
+                        await get_somthing(reboot_url, auths[j])
+                        j += 1
                     await asyncio.sleep(60)
                     [cap.release() for cap in caps]
                     cv2.destroyAllWindows()

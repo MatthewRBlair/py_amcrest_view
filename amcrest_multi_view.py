@@ -108,7 +108,7 @@ async def main(args):
                                     )
 
                                     headers = {
-                                        'Authorization': f'Digest username="{auths[j].username}", realm="{realm}", nonce="{nonce}", uri="{url}", response="{digest_response}"'
+                                        'Authorization': f'Digest username="{auths[j].username}", realm="{realm}", nonce="{nonce}", uri="{reboot_url}", response="{digest_response}"'
                                     }
                                     async with session.get(reboot_url, headers=headers) as resp:
                                         r = await resp.json()

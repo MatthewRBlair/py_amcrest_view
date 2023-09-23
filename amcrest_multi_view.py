@@ -51,8 +51,13 @@ def block_hog(hog, frame):
     return hog.detectMultiScale(frame, winStride=(8, 8), padding=(8, 8), scale=1.05)
 
 @to_thread
-def get_somthing(url, auth=None):
-    return requests.get(url, auth=auth)
+def get_something(url, auth=None):
+    try:
+        requests.get(url, auth=auth)
+    except Exception as e:
+        print(e)
+        pass
+    return None
 
 
 async def calculate_digest_response(username, password, realm, nonce, uri, method):
@@ -88,6 +93,7 @@ async def main(args):
 
     while True:
         frames = []
+        j = 0
         for cap in caps:
             success, frame = cap.read() # get frame from stream
             i = 1
@@ -95,16 +101,14 @@ async def main(args):
                 i += 1
                 if i % 100 == 0:
                     print("Rebooting...")
-                    j = 0
-                    for reboot_url in reboot_urls:
-                        await get_somthing(reboot_url, auths[j])
-                        j += 1
-                    await asyncio.sleep(60)
+                    await get_something(reboot_urls[j], auths[j])
+                    await asyncio.sleep(60*3)
                     [cap.release() for cap in caps]
                     cv2.destroyAllWindows()
                     caps = [cv2.VideoCapture(url) for url in urls]
                 print("Read Failed, Retrying...")
                 success, frame = cap.read()
+            j += 1
         
             if not success:
                 print("Read Failed...")
